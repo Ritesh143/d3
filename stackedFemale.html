@@ -1,0 +1,98 @@
+<!DOCTYPE>
+<html>
+<meta charset="utf-8">
+
+<head>
+ <title>Growth in Population from 2010-13</title>
+ <link rel="stylesheet" href="./css/style.css">
+
+</head>
+
+<body>
+ 
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script>
+// setting the margin
+var margin = {top: 20, right: 20, bottom: 70, left: 40},
+    width = 1700 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+//setting the color
+var color = d3.scale.category20b();
+//setting x&y co-ordinates
+var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+
+var y = d3.scale.linear().range([height, 0]);
+//setting x&y axis to the bottom and left
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(10);
+
+// setting the svg element dimensions
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+//for the tool tip component
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>Value:</strong> <span style='color:red'>" + d.female + "</span>";
+  })
+
+svg.call(tip);
+//accessing data from the json file
+d3.json("./json/jsonstacked.json", function(error, data) {
+
+    data.forEach(function(d) {
+        d.countryCode = d.countryCode;
+        d.female = +d.female;
+    });
+ //setting the components of x&y component
+  x.domain(data.map(function(d) { return d.countryCode; }));
+  y.domain([0, (d3.max(data, function(d) { return d.female; }))+20]);
+// adding attributes to x axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", "-.55em")
+      .attr("transform", "rotate(-90)" );
+// adding attributes to y axis
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Value ($)");
+// adding data and values to the graph
+  svg.selectAll("bar")
+      .data(data)
+    .enter().append("rect")
+      //style("fill","steelblue")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.countryCode); })
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.female); })
+      .attr("height", function(d) { return height - y(d.female); })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+});
+
+</script>
+
+</body>

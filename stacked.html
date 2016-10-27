@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <link rel="stylesheet" type="text/css" href="./css/stacked.css">
+</head>
+<body>
+  <h4>Stacked Bar chart for Asian countries over the years supplied (1960 - 2015)</h4>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script>
+//adding male and female data to causes variable
+var causes = ["male", "female"];
+// setting the margin
+var margin = {top: 20, right: 50, bottom: 30, left: 50},
+    width = 1800 - margin.left - margin.right,
+    height = 700 - margin.top - margin.bottom;
+//setting the width of the x axis scale
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width]);
+//setting the width of the y axis scale
+var y = d3.scale.linear()
+    .rangeRound([height, 0]);
+//assigning the color
+var z = d3.scale.category10();
+//setting x axis to the bottom 
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+//setting y axis to the top
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+//setting the margins of the svg elements
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+//adding the top tip elements to the graph
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>Value:</strong> <span style='color:red'>" + d.y + "</span>";
+  })
+
+svg.call(tip);
+//calling th data file
+d3.json("./json/jsonstacked.json",function(error, crimea) {
+  if (error) throw error;
+  var layers = d3.layout.stack()(causes.map(function(c) {
+    return crimea.map(function(d) {
+      return {x: d.countryCode, y: d[c]};
+    });
+  }));
+//adding x axis data function
+  x.domain(layers[0].map(function(d) { return d.x; }));
+//adding y axis data function
+  y.domain([0, d3.max(layers[layers.length - 1], function(d) { return d.y0 + d.y; })]).nice();
+//adding color function to the graph
+  var layer = svg.selectAll(".layer")
+      .data(layers)
+    .enter().append("g")
+      .attr("class", "layer")
+      .style("fill", function(d, i) { return z(i); });
+//adding the graph and data elements to the function
+  layer.selectAll("rect")
+      .data(function(d) { return d; })
+    .enter().append("rect")
+      .attr("x", function(d) { return x(d.x); })
+      .attr("y", function(d) { return y(d.y + d.y0); })
+      .attr("height", function(d) { return y(d.y0) - y(d.y + d.y0); })
+      .attr("width", x.rangeBand() - 1)
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+//adding the names to the x axis scale
+  svg.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+//adding scale to y axis scale
+  svg.append("g")
+      .attr("class", "axis axis--y")
+      .call(yAxis);
+});
+</script>
